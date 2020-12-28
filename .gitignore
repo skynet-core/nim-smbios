@@ -1,0 +1,7 @@
+# Created by .ignore support plugin (hsz.mobi)
+### Nim template
+nimcache/
+nimblecache/
+htmldocs/
+tests/*
+!tests/*.nim*

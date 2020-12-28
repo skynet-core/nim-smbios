@@ -1,12 +1,12 @@
-# This is just an example to get you started. You may wish to put all of your
-# tests into a single file, or separate them into multiple `test1`, `test2`
-# etc. files (better names are recommended, just make sure the name starts with
-# the letter 't').
-#
-# To run these tests, simply execute `nimble test`.
+import unittest, os, marshal
 
-import unittest
+import nim_smbios/parser
+import nim_smbios/enums
 
-import nim_smbios
-test "can add":
-  check add(5, 5) == 10
+test "test parser":
+  let entryFilePath = joinPath(getCurrentDir(), "rsc","Acer_Predator_PT515-51.entry")
+  let tableFilePath = joinPath(getCurrentDir(), "rsc","Acer_Predator_PT515-51.table")
+  var tableParser = newParser(entryFilePath,tableFilePath)
+  discard tableParser.parseTable()
+
+  echo $$tableParser.structs(DataType.dtBios.uint8)
