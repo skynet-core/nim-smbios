@@ -28,7 +28,7 @@ smbEnum DataType:
     dtHarwareSecurity 
     dtSystemPowerControls 
     dtVoltageProbe 
-    dtCoolingDevice 
+    dtCoolingDevice $= "Type 27: Cooling Device"
     dtTemperatureProbe 
     dtElectricalCurrentProbe 
     dtOutOfBandRemoteAccess 
@@ -98,9 +98,30 @@ smbEnum BIOSCharcts:
     # maps bit numbers to their meaning
     bootSpec            = 72      $= "BIOS Boot Specification is supported."
     netSrvBoot          = 73      $= "Function key-initiated network service boot is supported."
-    trgtContDist        = 74     $= "Enable targeted content distribution."
-    uefiSpec            = 75     $= "UEFI Specification is supported."
-    vm                  = 76     $= "SMBIOS table describes a virtual machine."
+    trgtContDist        = 74      $= "Enable targeted content distribution."
+    uefiSpec            = 75      $= "UEFI Specification is supported."
+    vm                  = 76      $= "SMBIOS table describes a virtual machine."
      #                     77
      #                     78
      #                     79
+smbEnum CoolingDeviceStatus:
+    cdsReserved                   $= "Reserved"
+    cdsOther                      $= "Other"
+    cdsUnknown                    $= "Unknown"
+    cdsOK                         $= "OK"
+    cdsNonCrit                    $= "Non-Critical"
+    cdsCrit                       $= "Critical"
+    cdsNonRecov                   $= "Non-Recoverable"
+
+smbEnum CoolingDeviceType:
+    cdtReserved                   $= "Reserved"
+    cdtUnkn                       $= "Unknown"
+    cdtFan                        $= "Fan"
+    cdtCentBlower                 $= "Centrifugal Blower"
+    cdtChipFan                    $= "Chip Fan"
+    cdtCabinetFan                 $= "Cabinet Fan"
+    cdtPowSuplFan                 $= "Power Supply Fan"
+    cdtHeatPipe                   $= "Heat Pipe"
+    cdtIntegrRefrig               $= "Integrated Refrigeration"
+    cdtActCool                    $= "Active Cooling"
+    cdtPasCool                    $= "Passive Cooling"

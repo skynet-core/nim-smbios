@@ -1,4 +1,4 @@
-import packed, streams
+import packed, streams, defines, strformat
 import defines
 
 const
@@ -13,13 +13,9 @@ type
     ParseError* = object of CatchableError
 
 
-proc parseEntryPoint*(stream: Stream): EntryPoint {. raises: [OSError, IOError, UnknowPrefix, ParseError] .} =
-    let begin = stream.readStr(4)
-    if begin.len < 4:
-        raise newException(ParseError,"to few data for prefix")
-    stream.setPosition(0)
-    case begin:
-    of magicPrefix32:
+proc parseEntryPoint*(stream: Stream, size: int): EntryPoint {. raises: [OSError, IOError] .} =
+    case size:
+    of 32:
         var ep = SMBEntryPoint32()
         let n = stream.readData(addr ep, ep.sizeof)
         if n < ep.sizeof:
@@ -31,9 +27,7 @@ proc parseEntryPoint*(stream: Stream): EntryPoint {. raises: [OSError, IOError, 
             table: ep.table(),
             version: ep.version(),
         )
-
-
-    of magicPrefix64[0..<magicPrefix32.len]:
+    of 64:
         var ep = SMBEntryPoint64()
         let n = stream.readData(addr ep, ep.sizeof)
         if n < ep.sizeof:
@@ -42,10 +36,10 @@ proc parseEntryPoint*(stream: Stream): EntryPoint {. raises: [OSError, IOError, 
             table: ep.table(),
             version: ep.version(),
         )
-    else: raise newException(UnknowPrefix,"can't determine entry point type by prefix " & begin)
+    else: discard
 
 
-proc findEntryPoint*(stream: Stream, startAddr, endAddr: int): int {. raises: [IOError, OSError, EPNotFound] .} =
+proc findEntryPoint*(stream: Stream, startAddr, endAddr: int, size: var int): int {. raises: [IOError, OSError, EPNotFound] .} =
     # looks for entry point instream
     var 
         startAddr = startAddr
@@ -53,10 +47,45 @@ proc findEntryPoint*(stream: Stream, startAddr, endAddr: int): int {. raises: [I
 
     stream.setPosition(startAddr)
     while startAddr < endAddr:
-        zeroMem(addr buffer, paragraph)
+        # zeroMem(addr buffer, paragraph)
         read = stream.readData(addr buffer, paragraph)
-        if buffer[0..2] == magicPrefix:
+        if buffer[0..magicPrefix64.high] == magicPrefix64:
+            size = 64
             result = startAddr
             return
+        elif buffer[0..magicPrefix32.high] == magicPrefix32:
+            size = 64
+            result = startAddr
+            return
+        startAddr += paragraph
+    raise newException(EPNotFound, "entry point not found")
+
+proc findEntryPointEFI*(stream: Stream, startAddr, endAddr: int, size: var int): int {. raises: [IOError, OSError, EPNotFound] .} =
+    # looks for entry point instream
+    var 
+        startAddr = startAddr
+        read: int
+
+    stream.setPosition(startAddr)
+    while startAddr < endAddr:
+        # zeroMem(addr buffer, paragraph)
+        read = stream.readData(addr buffer, paragraph)
+        if buffer[0] != '\0':
+            try:
+                echo buffer
+                # echo smb3Guid
+                # echo smbGuid
+            except: discard
+            
+
+        if equalMem(addr buffer[0],smb3Guid.unsafeAddr,16):
+            size = 64
+            result = startAddr
+            return
+        elif equalMem(addr buffer[0],smbGuid.unsafeAddr,16):
+            size = 32
+            result = startAddr
+            return
+
         startAddr += paragraph
     raise newException(EPNotFound, "entry point not found")

@@ -10,3 +10,4 @@ test "test parser":
   discard tableParser.parseTable()
 
   echo $$tableParser.structs(DataType.dtBios.uint8)
+  echo $$tableParser.structs(DataType.dtCoolingDevice.uint8)

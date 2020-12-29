@@ -2,8 +2,8 @@
 # import this file by writing ``import nim_smbios/submodule``. Feel free to rename or
 # remove this file altogether. You may create additional modules alongside
 # this file as required.
-import streams, sequtils, os, tables,binary, os, times
-import packed ,misc, defines, enums, structs
+import streams, sequtils, os, tables, os, times, defines, binary, enums
+import packed ,misc, defines, structs
 
 type
   Parser* = ref object
@@ -12,11 +12,13 @@ type
     structs: TableRef[uint8, seq[Struct]]
 
 proc memoryStreamParser*(stream: Stream, startAddr, endAddr: int): 
-    Parser {. raises: [IOError, OSError, EPNotFound, UnknowPrefix, ParseError] .} =
-
-    let epAddr = findEntryPoint(stream, startAddr, endAddr)
+    Parser {. raises: [IOError, OSError, EPNotFound ] .} =
+    # TODO: UEFI or smb 2?
+    var size: int
+    let epAddr = findEntryPoint(stream, startAddr, endAddr, size)
     stream.setPosition(epAddr)
-    let ep = parseEntryPoint(stream) 
+    
+    let ep = parseEntryPoint(stream, size) 
     result = Parser(ep: ep,
       data: newSeq[char](ep.table[1]))
 
@@ -29,29 +31,40 @@ proc memoryStreamParser*(stream: Stream, startAddr, endAddr: int):
 
 
 proc devMemParser*(path: string, startAddr, endAddr: int): 
-  Parser {. raises: [IOError, OSError, EPNotFound, UnknowPrefix, Exception] .} =
+  Parser {. raises: [IOError, OSError, EPNotFound, Exception] .} =
     
     var stream = openFileStream(path, fmRead)
     defer: stream.close()
     result = memoryStreamParser(stream, startAddr, endAddr)
 
 proc parserFromAddress*():
-  Parser {. raises: [IOError, OSError, EPNotFound, UnknowPrefix,  Exception] .} =
+  Parser {. raises: [IOError, OSError, Exception] .} =
   
   result = devMemParser(linuxDevMem,linuxSMBIOSRawAddress,linuxSMBIOSRawEndAddres)
 
 
-proc newParser*(epFile,tableFile: string): Parser =
+proc newParser*(epFile,tableFile: string): Parser {. raises: [UnknowPrefix, OSError, Exception, IOError] .}  =
   let stream = openFileStream(epFile, fmRead)
   defer: stream.close()
-  let ep = parseEntryPoint(stream)
+  # detect EP size
+  var size: int
+  let magic = stream.readStr(4)
+  case magic:
+  of magicPrefix64[0..3]:
+    size = 64
+  of magicPrefix32:
+    size = 32
+  else: raise newException(UnknowPrefix, "can't get entrypoint size from prefix: " & magic)
+
+  stream.setPosition(0)
+  let ep = parseEntryPoint(stream, size)
   result = Parser(
     ep: ep,
-    data: readFile(tableFile).toSeq )
+    data: readFile(tableFile).toSeq)
 
 
 proc parseFromSysFS*():
-  Parser {. raises: [IOError, OSError, UnknowPrefix, ParseError, Exception] .} = 
+  Parser {. raises: [IOError, UnknowPrefix, Exception] .} = 
   echo "FS STREAM"
   result = newParser(linuxDMISysfsEntryPoint, linuxDMISysfsPath)
 

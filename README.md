@@ -41,7 +41,7 @@ Awesome SBIOS parser library in pure Nim.
 - [ ] Hardware Security (Type 24)
 - [ ] System Power Controls (Type 25)
 - [ ] Voltage Probe (Type 26)
-- [ ] Cooling Device (Type 27)
+- [x] Cooling Device (Type 27)
 - [ ] Temperature Probe (Type 28)
 - [ ] Electrical Current Probe (Type 29)
 - [ ] Out-of-Band Remote Access (Type 30)

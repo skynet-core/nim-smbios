@@ -11,7 +11,6 @@ type
         handle:                     uint16
     Struct*                       = ref object
         handle:                     uint16
-        stringSet:                  seq[string]
         case kind: DataType
         of dtBios:
             vendor*:                 string
@@ -23,8 +22,14 @@ type
             characteristics*:        set[BIOSCharcts]
             release*:                Version
             ecFirmwareRelease*:      Version
-        of dtSystem:
-            system:                 bool
+        of dtCoolingDevice:
+            tempProbHandle:          uint16
+            devType:                 CoolingDeviceType
+            status:                  CoolingDeviceStatus
+            coolingUintGroup:        uint8
+            oemDefined:              uint32
+            nomiSpeed:               int32
+            description:             string
         else: discard
 
 
@@ -33,7 +38,7 @@ proc parseReleaseDate(str: string): DateTime =
     else: parse(str, "MM/dd/yy")
 
 
-proc decodeBiosChars(bits: uint64, bits1, bits2: uint8, version: array[3,int]): set[BIOSCharcts] =
+proc decodeBiosChars(bits: uint64, bits1, bits2: uint8, version: int): set[BIOSCharcts] =
     var 
         i = notSuprt.int
     while i <= necPc98.int:
@@ -42,7 +47,7 @@ proc decodeBiosChars(bits: uint64, bits1, bits2: uint8, version: array[3,int]): 
             result.incl(i.BIOSCharcts)
          i += 1
     i = acpi.int
-    if version[0]*10 + version[1] >= 24:
+    if version >= 240:
         while i <= smartBat.int:
             if (bits1 and (1.uint8 shl (i mod 8).uint8)) != 0:
             # probe each bit
@@ -60,19 +65,24 @@ proc shiftTo*[T](src: ptr T, offset: uint): ptr T =
 
 
 proc newBiosStruct(src: SMBBIOSInformation,
-     version: array[3, int], stringsSet: seq[string]): Struct {. raises: [TimeParseError].} =
-    
+     version: int, stringsSet: seq[string]): Struct {. raises: [TimeParseError].} =
 
     result = Struct(
         kind: dtBios,
         handle: src.header.handle,
-        stringSet: newSeq[string](),
         vendor: stringsSet[src.vendor-1],
         version: stringsSet[src.version-1],
         startAddressSegment: src.startAddressSegment,
-        # releaseDate: parseReleaseDate(stringsSet[src.releaseDate-1]),
+        releaseDate: parseReleaseDate(stringsSet[src.releaseDate-1]),
         runtimeSize: (0x10000 - src.startAddressSegment).int * 16,
-        romSize: if src.romSize == 0xff: -1 else: (src.romSize.int * 64 * 1024) ,
+        romSize: if src.romSize == 0xff: 
+                    if version >= 310: (src.extRomSize and (uint16.high shl 2)).int * 
+                                        (case 2 shl 13: 
+                                            of 0: 2 shl 20 
+                                            of 1: 2 shl 30
+                                            else: 0).int
+                    else: src.romSize.int
+                else: ((src.romSize.int + 1) * 64 * 1024) ,
         characteristics: decodeBiosChars(
                             src.characteristics,
                             src.characteristicsExt1,
@@ -82,24 +92,33 @@ proc newBiosStruct(src: SMBBIOSInformation,
         ecFirmwareRelease: Version(maj:src.ecFirmwareMajorRelease,min:src.ecFirmwareMinorRelease,rev: 0),
         )
 
+proc newCoolingDevice*(src: SMBCoolingDevice, version: int, stringSet: seq[string]): Struct =
+    result = Struct(
+        kind: dtCoolingDevice,
+        tempProbHandle: src.tempProbHandle,
+        devType: (src.devTypeAndStatus and (0xff shr 3).uint8).CoolingDeviceType,
+        status: (src.devTypeAndStatus and (0x06 shl 5).uint8).CoolingDeviceStatus,
+        coolingUintGroup: src.coolingUintGroup,
+        oemDefined: src.oemDefined,
+        nomiSpeed:  if src.nomiSpeed == 0x8000: -1'i32 else: src.nomiSpeed.int32,
+        description: if version >= 270: stringSet[src.description] else: "",
+    )
 
-proc addStr*(self: var Struct, str: string): void =
-    self.stringSet.add(str)
-
-
-proc fillStrProps*(self: var Struct): void =
-    discard
 
 proc decode*(kind: uint8, data: seq[char], stringsSet: seq[string],
     version: array[3,int]): Struct {. raises: [TimeParseError].} =
     # decodes raw binary data chunk into Struct based on kind
     # echo stringsSet
+    let ver = version[0] * 100 + version[1]*10 + version[0]
     var 
         data = data
     case kind:
     of dtBios.uint8:
-        var smbBios: SMBBIOSInformation
-        smbBios.fromBin(data)
-        echo smbBios
-        result = newBiosStruct(smbBios, version, stringsSet)
+        var src: SMBBIOSInformation
+        src.fromBin(data)
+        result = newBiosStruct(src, ver, stringsSet)
+    of dtCoolingDevice.uint8:
+        var src: SMBCoolingDevice
+        src.fromBin(data)
+        result = newCoolingDevice(src, ver, stringsSet)
     else: discard

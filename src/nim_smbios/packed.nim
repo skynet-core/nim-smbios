@@ -204,6 +204,14 @@ type
         volatileSize: uint64                    #       #
         cacheSize: uint64                       #       #
         logicalSize: uint64                     #       #
+    SMBCoolingDevice* {. packed .} = object
+        header*: SMBStructHeader                 # 2.2 + #
+        tempProbHandle*: uint16                  #       #
+        devTypeAndStatus*: uint8                 #       #
+        coolingUintGroup*: uint8                 #       #
+        oemDefined*: uint32                      #       #
+        nomiSpeed*: uint32                       #       #
+        description*: byte                       # 2.7 + # string
     
 type 
     SMBEntryPoint* = SMBEntryPoint32 or SMBEntryPoint64
