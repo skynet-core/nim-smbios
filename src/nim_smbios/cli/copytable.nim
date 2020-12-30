@@ -1,5 +1,5 @@
 import os, streams, strutils, binary
-import ../parser
+import ../private/parser
 
 when isMainModule:
     let args = commandLineParams()
@@ -7,7 +7,7 @@ when isMainModule:
         quit("specify your pc model to save data",1)
 
     let name = args[0].replace(' ','_')
-    var tableParser = discover()
+    var tableParser = initParser()
     writeFile(name & ".table", cast[string](tableParser.tableData()))
     let epStream = openFileStream(name & ".entry",fmWrite)
 

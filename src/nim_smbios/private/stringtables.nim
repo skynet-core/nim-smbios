@@ -1,17 +1,6 @@
 # SMBIOS tables. See https://www.dmtf.org/sites/default/files/standards/documents/DSP0134_3.4.0.pdf
 
 const
-    TableSMBIOSSystemWakeUpReason* = {
-        0: "Reserved",
-        1: "Other",
-        2: "Unknown",
-        3: "APM Timer",
-        4: "Modem Ring",
-        5: "LAN Remote",
-        6: "Power Switch",
-        7: "PCI PME#",
-        8: "AC Power Restored",
-    }
     TableSMBIOSDescriptions* = {
         0:   "BIOS Information",
         1:   "System Information",

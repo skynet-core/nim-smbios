@@ -1,4 +1,4 @@
-import enums, packed, binary, times, bitops, strformat
+import enums, packed, binary, times, bitops, strformat, guid
 
 type 
     Version*                      = ref object
@@ -14,22 +14,31 @@ type
         case kind: DataType
         of dtBios:
             vendor*:                 string
-            version*:                string
+            biosVersion*:                string
             startAddressSegment*:    uint16
             releaseDate*:            DateTime 
             runtimeSize*:            int
             romSize*:                int
             characteristics*:        set[BIOSCharcts]
-            release*:                Version
+            biosRelease*:            Version
             ecFirmwareRelease*:      Version
+        of dtSystem:
+            manufacturer*:           string                     
+            productName*:            string                    
+            serialNumber*:           string                     
+            uuid*:                   GUID                               
+            sysVersion:              string
+            wakeUpReason:            SysWakeUpType              
+            skuNumber:               string                      
+            family:                  string                         
         of dtCoolingDevice:
-            tempProbHandle:          uint16
-            devType:                 CoolingDeviceType
-            status:                  CoolingDeviceStatus
-            coolingUintGroup:        uint8
-            oemDefined:              uint32
-            nomiSpeed:               int32
-            description:             string
+            tempProbHandle*:          uint16
+            devType*:                 CoolingDeviceType
+            status*:                  CoolingDeviceStatus
+            coolingUintGroup*:        uint8
+            oemDefined*:              uint32
+            nomiSpeed*:               int32
+            description*:             string
         else: discard
 
 
@@ -60,7 +69,7 @@ proc decodeBiosChars(bits: uint64, bits1, bits2: uint8, version: int): set[BIOSC
             i += 1
 
 
-proc shiftTo*[T](src: ptr T, offset: uint): ptr T =
+proc shiftTo[T](src: ptr T, offset: uint): ptr T =
     result = cast[ptr T](cast[uint](src) + offset)
 
 
@@ -71,7 +80,7 @@ proc newBiosStruct(src: SMBBIOSInformation,
         kind: dtBios,
         handle: src.header.handle,
         vendor: stringsSet[src.vendor-1],
-        version: stringsSet[src.version-1],
+        biosVersion: stringsSet[src.version-1],
         startAddressSegment: src.startAddressSegment,
         releaseDate: parseReleaseDate(stringsSet[src.releaseDate-1]),
         runtimeSize: (0x10000 - src.startAddressSegment).int * 16,
@@ -88,11 +97,11 @@ proc newBiosStruct(src: SMBBIOSInformation,
                             src.characteristicsExt1,
                             src.characteristicsExt2,
                             version),
-        release: Version(maj:src.majorRelease,min: src.minorRelease,rev:0),
+        biosRelease: Version(maj:src.majorRelease,min: src.minorRelease,rev:0),
         ecFirmwareRelease: Version(maj:src.ecFirmwareMajorRelease,min:src.ecFirmwareMinorRelease,rev: 0),
         )
 
-proc newCoolingDevice*(src: SMBCoolingDevice, version: int, stringSet: seq[string]): Struct =
+proc newCoolingDevice(src: SMBCoolingDevice, version: int, stringSet: seq[string]): Struct =
     result = Struct(
         kind: dtCoolingDevice,
         tempProbHandle: src.tempProbHandle,
@@ -101,8 +110,27 @@ proc newCoolingDevice*(src: SMBCoolingDevice, version: int, stringSet: seq[strin
         coolingUintGroup: src.coolingUintGroup,
         oemDefined: src.oemDefined,
         nomiSpeed:  if src.nomiSpeed == 0x8000: -1'i32 else: src.nomiSpeed.int32,
-        description: if version >= 270: stringSet[src.description] else: "",
+        description: if version >= 270: stringSet[src.description - 1] else: "",
     )
+
+proc newSystemInfo*(src: SMBSystemInformation, version: int, stringSet: seq[string]): Struct =
+    echo stringSet
+    result = Struct(
+        kind: dtSystem,
+        manufacturer: stringSet[src.manufacturer - 1],
+        productName: stringSet[src.productName - 1],
+        serialNumber: stringSet[src.serialNumber - 1],
+        sysVersion: stringSet[src.version - 1],
+        uuid: initGuid(data = src.uuid),
+        wakeUpReason: swtReserved,
+        skuNumber: "",
+        family:""
+    )
+    if version >= 210:
+        result.wakeUpReason = src.wakeUpReason.SysWakeUpType
+    if version >= 240:
+        result.skuNumber = stringSet[src.skuNumber - 1]
+        result.family = stringSet[src.family - 1]
 
 
 proc decode*(kind: uint8, data: seq[char], stringsSet: seq[string],
@@ -117,6 +145,10 @@ proc decode*(kind: uint8, data: seq[char], stringsSet: seq[string],
         var src: SMBBIOSInformation
         src.fromBin(data)
         result = newBiosStruct(src, ver, stringsSet)
+    of dtSystem.uint8:
+        var src: SMBSystemInformation
+        src.fromBin(data)
+        result = newSystemInfo(src, ver, stringsSet)
     of dtCoolingDevice.uint8:
         var src: SMBCoolingDevice
         src.fromBin(data)

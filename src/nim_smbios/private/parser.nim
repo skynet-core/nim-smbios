@@ -2,7 +2,7 @@
 # import this file by writing ``import nim_smbios/submodule``. Feel free to rename or
 # remove this file altogether. You may create additional modules alongside
 # this file as required.
-import streams, sequtils, os, tables, os, times, defines, binary, enums
+import streams, sequtils, os, tables, options, times, defines, binary, enums
 import packed ,misc, defines, structs
 
 type
@@ -11,7 +11,7 @@ type
     data: seq[char]
     structs: TableRef[uint8, seq[Struct]]
 
-proc memoryStreamParser*(stream: Stream, startAddr, endAddr: int): 
+proc memoryStreamParser(stream: Stream, startAddr, endAddr: int): 
     Parser {. raises: [IOError, OSError, EPNotFound ] .} =
     # TODO: UEFI or smb 2?
     var size: int
@@ -30,14 +30,14 @@ proc memoryStreamParser*(stream: Stream, startAddr, endAddr: int):
         raise newException(IOError, "mem stream parser: unexpected EOF")
 
 
-proc devMemParser*(path: string, startAddr, endAddr: int): 
+proc devMemParser(path: string, startAddr, endAddr: int): 
   Parser {. raises: [IOError, OSError, EPNotFound, Exception] .} =
     
     var stream = openFileStream(path, fmRead)
     defer: stream.close()
     result = memoryStreamParser(stream, startAddr, endAddr)
 
-proc parserFromAddress*():
+proc parserFromAddress():
   Parser {. raises: [IOError, OSError, Exception] .} =
   
   result = devMemParser(linuxDevMem,linuxSMBIOSRawAddress,linuxSMBIOSRawEndAddres)
@@ -63,12 +63,11 @@ proc newParser*(epFile,tableFile: string): Parser {. raises: [UnknowPrefix, OSEr
     data: readFile(tableFile).toSeq)
 
 
-proc parseFromSysFS*():
+proc parseFromSysFS():
   Parser {. raises: [IOError, UnknowPrefix, Exception] .} = 
-  echo "FS STREAM"
   result = newParser(linuxDMISysfsEntryPoint, linuxDMISysfsPath)
 
-proc discover*(): Parser  =
+proc initParser*(): Parser  =
   when hostOS == "linux":
     if fileExists(linuxDMISysfsPath):
       result = parseFromSysFS()
@@ -85,8 +84,11 @@ proc tableData*(self: Parser): seq[char] =
     result = self.data
 
 
-proc structs*(self:Parser, kind: uint8): seq[Struct] =
-  result = self.structs[kind]
+proc structs*(self: Parser, kind: uint8): Option[seq[Struct]] =
+  if self.structs.contains(kind):
+    result = some(self.structs[kind])
+  else:
+    result = none[seq[Struct]]()
 
 
 proc parseTable*(p: var Parser): Parser {. raises: [TimeParseError, KeyError].} = 

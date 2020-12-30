@@ -1,8 +1,8 @@
-import private/smbenum
+import smbenum
 
 smbEnum DataType:
     dtBios  $= "Type 0: BIOS Information"                      #
-    dtSystem $= ""
+    dtSystem $= "Type 1: System Information"
     dtBaseBoard
     dtChasis
     dtProcessor
@@ -125,3 +125,14 @@ smbEnum CoolingDeviceType:
     cdtIntegrRefrig               $= "Integrated Refrigeration"
     cdtActCool                    $= "Active Cooling"
     cdtPasCool                    $= "Passive Cooling"
+
+smbEnum SysWakeUpType:
+    swtReserved                   $= "Reserved"
+    swtOther                      $= "Other"
+    swtUnknown                    $= "Unknown"
+    swtApmTm                      $= "APM Timer"
+    swtModemRn                    $= "Modem Ring"
+    swtLanRem                     $= "LAN Remote"
+    swtPowSwich                   $= "Power Switch"
+    swtPciPme                     $= "PCI PME#"
+    swtACPowRes                   $= "AC Power Restored"

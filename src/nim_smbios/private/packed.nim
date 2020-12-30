@@ -77,15 +77,15 @@ type
         extRomSize*: uint16                      # 3.1 + #
 
     SMBSystemInformation* {. packed .} = object 
-        header: SMBStructHeader                 # 2.0 + #
-        manufacturer: uint8                     #       #
-        productName: uint8                      #       #
-        version: uint8                          #       #
-        serialNumber: uint8                     #       #
-        uuid: array[16, uint8]                  # 2.1 + # can be all 0 or all 1's, version 2.1+
-        wakeUpReason: uint8                     #       # reason for system wakeup
-        skuNumber: uint8                        # 2.4 + # 
-        family: uint8                           #       #
+        header*: SMBStructHeader                 # 2.0 + #
+        manufacturer*: uint8                     #       #
+        productName*: uint8                      #       #
+        version*: uint8                          #       #
+        serialNumber*: uint8                     #       #
+        uuid*: array[16, uint8]                  # 2.1 + # can be all 0 or all 1's, version 2.1+
+        wakeUpReason*: uint8                     #       # reason for system wakeup
+        skuNumber*: uint8                        # 2.4 + # 
+        family*: uint8                           #       #
 
     SMBBaseBoard* {. packed .} = object
         header: SMBStructHeader                 # 2.0 + #
