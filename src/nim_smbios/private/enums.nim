@@ -1,9 +1,9 @@
 import smbenum
 
 smbEnum DataType:
-    dtBios  $= "Type 0: BIOS Information"                      #
-    dtSystem $= "Type 1: System Information"
-    dtBaseBoard
+    dtBios                                  $= "Type 0: BIOS Information"                      #
+    dtSystem                                $= "Type 1: System Information"
+    dtBaseBoard                             $= "Type 2: Base Board Information"
     dtChasis
     dtProcessor
     dtMemoryController # obsolete
@@ -136,3 +136,25 @@ smbEnum SysWakeUpType:
     swtPowSwich                   $= "Power Switch"
     swtPciPme                     $= "PCI PME#"
     swtACPowRes                   $= "AC Power Restored"
+
+smbEnum BoardFeature:
+    bfHostBrd                     $= "Hosting Board"
+    bfReqAuxBrd                   $= "Requires Daughter Board"
+    bfRemovable                   $= "Board is Removable"
+    bfReplaceble                  $= "Board is Replaceable"
+    bfSwapable                    $= "Board is Hot-Swappable"
+
+smbEnum BoardType:
+    btUnknown                     $= "Unknown"
+    btOther                       $= "Other"
+    btSrvBlade                    $= "Server Blade"
+    btConSwitch                   $= "Connectivity Switch"
+    btSmm                         $= "System Management Module"
+    btCpuMod                      $= "Processor Module"
+    btIoMod                       $= "I/O Module"
+    btMemMod                      $= "Memory Module"
+    btDaughter                    $= "Daughter board"
+    btMother                      $= "Motherboard (includes processor, memory, and I/O)"
+    btCpuMemMod                   $= "Processor/Memory Module"
+    btCpuIoMod                    $= "Processor/IO Module"
+    btInterconMod                 $= "Interconnect board"

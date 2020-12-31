@@ -1,4 +1,4 @@
-import packed, streams, defines, strformat
+import packed, streams, defines
 import defines
 
 const

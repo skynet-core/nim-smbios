@@ -199,28 +199,6 @@ const
         0x04: "Write",
         0x05: "Partial write",
     }
-    TableSMBBaseBoardFeaturesTable* = {
-        0x00: "Hosting Board",
-        0x01: "Requires Daughter Board",
-        0x02: "Board is Removable",
-        0x03: "Board is Replaceable",
-        0x04: "Boar is Hot-Swappable",
-    }
-    BaseBoardType* = {
-        0x01: "Unknown",
-        0x02: "Other",
-        0x03: "Server Blade",
-        0x04: "Connectivity Switch",
-        0x05: "System Management Module",
-        0x06: "Processor Module",
-        0x07: "I/O Module",
-        0x08: "Memory Module",
-        0x09: "Daughter board",
-        0x0A: "Motherboard (includes processor, memory, and I/O)",
-        0x0B: "Processor/Memory Module",
-        0x0C: "Processor/IO Module",
-        0x0D: "Interconnect board",
-    }
     TableCPUIDFeatures* = {
         0x00: "FPU:Floating-point unit on-chip", # 0 #
         0x01: "VME:Virtual mode extension",

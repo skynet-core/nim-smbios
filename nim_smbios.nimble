@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.2"
+version       = "0.1.3"
 author        = "Skynet Core"
 description   = "Awesome SMBIOS parser in pure Nim"
 license       = "GPL-3.0"

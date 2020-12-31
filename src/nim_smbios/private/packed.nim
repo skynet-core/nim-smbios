@@ -88,18 +88,18 @@ type
         family*: uint8                           #       #
 
     SMBBaseBoard* {. packed .} = object
-        header: SMBStructHeader                 # 2.0 + #
-        manufacturer: uint8                     #       # string
-        product: uint8                          #       # string
-        version: uint8                          #       # string
-        serialNumber: uint8                     #       # string
-        assetTagNumber: uint8                   #       # string
-        featureFlags: uint8                     #       # Bit Field
-        locationInChassis: uint8                #       # string
-        chassisHandle: uint16                   #       # varies
-        boardType: uint8                        #       # ENUM
-        numberOfContainedHandles: uint8         #       # Varies    #   Number (0 to 255) of Contained Object Handles that follow
-        # containedObjectHandles: uint16        #       # Varies    #   List of handles of other structures (for example, Baseboard,
+        header*: SMBStructHeader                 # 2.0 + #
+        manufacturer*: uint8                     #       # string
+        product*: uint8                          #       # string
+        version*: uint8                          #       # string
+        serialNumber*: uint8                     #       # string
+        assetTagNumber*: uint8                   #       # string
+        featureFlags*: uint8                     #       # Bit Field
+        locationInChassis*: uint8                #       # string
+        chassisHandle*: uint16                   #       # varies
+        boardType*: uint8                        #       # ENUM
+        numberOfContainedHandles*: uint8         #       # Varies    #   Number (0 to 255) of Contained Object Handles that follow
+        containedObjectHandles: uint16        #       # Varies    #   List of handles of other structures (for example, Baseboard,
                                                                     # Processor, Port, System Slots, Memory Device) that are
                                                                     # contained by this baseboard
 
@@ -213,7 +213,8 @@ type
         nomiSpeed*: uint32                       #       #
         description*: byte                       # 2.7 + # string
     
-type 
+type
+    SMBStruct* = SMBBIOSInformation | SMBSystemInformation | SMBBaseBoard | SMBCoolingDevice
     SMBEntryPoint* = SMBEntryPoint32 or SMBEntryPoint64
     UnknowPrefix* = object of CatchableError
     EntryPoint* = object

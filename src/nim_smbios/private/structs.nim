@@ -1,45 +1,55 @@
-import enums, packed, binary, times, bitops, strformat, guid
+import enums, packed, binary, times, guid, strutils
 
 type 
-    Version*                      = ref object
-        maj*: uint8
-        min*: uint8
-        rev*: uint8
-    Header*                       = ref object
+    Version*                        = ref object
+        maj*:                       uint8
+        min*:                       uint8
+        rev*:                       uint8
+    Header*                         = object
         kind:                       DataType
         length:                     uint8
         handle:                     uint16
-    Struct*                       = ref object
-        handle:                     uint16
-        case kind: DataType
-        of dtBios:
-            vendor*:                 string
-            biosVersion*:                string
-            startAddressSegment*:    uint16
-            releaseDate*:            DateTime 
-            runtimeSize*:            int
-            romSize*:                int
-            characteristics*:        set[BIOSCharcts]
-            biosRelease*:            Version
-            ecFirmwareRelease*:      Version
-        of dtSystem:
-            manufacturer*:           string                     
-            productName*:            string                    
-            serialNumber*:           string                     
-            uuid*:                   GUID                               
-            sysVersion:              string
-            wakeUpReason:            SysWakeUpType              
-            skuNumber:               string                      
-            family:                  string                         
-        of dtCoolingDevice:
-            tempProbHandle*:          uint16
-            devType*:                 CoolingDeviceType
-            status*:                  CoolingDeviceStatus
-            coolingUintGroup*:        uint8
-            oemDefined*:              uint32
-            nomiSpeed*:               int32
-            description*:             string
-        else: discard
+    Struct*                         = ref object of RootObj
+        header*: Header
+    BiosInfo*                       = ref object of Struct
+        vendor*:                    string
+        biosVersion*:               string
+        startAddressSegment*:       uint16
+        releaseDate*:               DateTime 
+        runtimeSize*:               int
+        romSize*:                   int
+        characteristics*:           set[BIOSCharcts]
+        biosRelease*:               Version
+        ecFirmwareRelease*:         Version
+    SystemInfo*                     = ref object of Struct
+        manufacturer*:              string                     
+        productName*:               string                    
+        serialNumber*:              string                     
+        uuid*:                      GUID                               
+        sysVersion:                 string
+        wakeUpReason:               SysWakeUpType              
+        skuNumber:                  string                      
+        family:                     string
+    BaseBoard*                      = ref object of Struct
+        manufacturer*:              string
+        product*:                   string
+        version*:                   string
+        serialNumber*:              string
+        assetTagNumber*:            string
+        features*:                  set[BoardFeature]
+        locationInChassis*:         string
+        chassisHandle*:             uint16
+        boardType*:                 BoardType
+        numberOfContainedHandles*:  uint8
+        containedObjectHandles*:    seq[uint16]  
+    CoolingDevice*                  = ref object of Struct
+        tempProbHandle*:            uint16
+        devType*:                   CoolingDeviceType
+        status*:                    CoolingDeviceStatus
+        coolingUintGroup*:          uint8
+        oemDefined*:                uint32
+        nomiSpeed*:                 int32
+        description*:               string
 
 
 proc parseReleaseDate(str: string): DateTime =
@@ -68,6 +78,17 @@ proc decodeBiosChars(bits: uint64, bits1, bits2: uint8, version: int): set[BIOSC
                 result.incl(i.BIOSCharcts)
             i += 1
 
+proc decodeBoardFeatures(bit: byte): set[BoardFeature] = 
+    var i = bfHostBrd.int
+    while i <= bfSwapable.int:
+        if (bit and (1.uint8 shl i.uint8)) != 0:
+            # probe each bit
+            result.incl(i.BoardFeature)
+        i += 1
+
+proc decodeBoardHandles(raw: ptr UncheckedArray[uint16], num: uint8): seq[uint16] =
+    for i in 0..<num.int:
+        result.add(raw[i])
 
 proc shiftTo[T](src: ptr T, offset: uint): ptr T =
     result = cast[ptr T](cast[uint](src) + offset)
@@ -76,13 +97,12 @@ proc shiftTo[T](src: ptr T, offset: uint): ptr T =
 proc newBiosStruct(src: SMBBIOSInformation,
      version: int, stringsSet: seq[string]): Struct {. raises: [TimeParseError].} =
 
-    result = Struct(
-        kind: dtBios,
-        handle: src.header.handle,
-        vendor: stringsSet[src.vendor-1],
-        biosVersion: stringsSet[src.version-1],
+    result = BiosInfo(
+        header: Header(kind: dtBios, length: src.header.length, handle: src.header.handle),
+        vendor: stringsSet[src.vendor-1].strip(),
+        biosVersion: stringsSet[src.version-1].strip(),
         startAddressSegment: src.startAddressSegment,
-        releaseDate: parseReleaseDate(stringsSet[src.releaseDate-1]),
+        releaseDate: parseReleaseDate(stringsSet[src.releaseDate-1].strip()),
         runtimeSize: (0x10000 - src.startAddressSegment).int * 16,
         romSize: if src.romSize == 0xff: 
                     if version >= 310: (src.extRomSize and (uint16.high shl 2)).int * 
@@ -102,35 +122,53 @@ proc newBiosStruct(src: SMBBIOSInformation,
         )
 
 proc newCoolingDevice(src: SMBCoolingDevice, version: int, stringSet: seq[string]): Struct =
-    result = Struct(
-        kind: dtCoolingDevice,
+    result = CoolingDevice(
+        header: Header(kind: dtCoolingDevice, length: src.header.length, handle: src.header.handle),
         tempProbHandle: src.tempProbHandle,
         devType: (src.devTypeAndStatus and (0xff shr 3).uint8).CoolingDeviceType,
         status: (src.devTypeAndStatus and (0x06 shl 5).uint8).CoolingDeviceStatus,
         coolingUintGroup: src.coolingUintGroup,
         oemDefined: src.oemDefined,
         nomiSpeed:  if src.nomiSpeed == 0x8000: -1'i32 else: src.nomiSpeed.int32,
-        description: if version >= 270: stringSet[src.description - 1] else: "",
+        description: if version >= 270: stringSet[src.description - 1].strip() else: "",
     )
 
-proc newSystemInfo*(src: SMBSystemInformation, version: int, stringSet: seq[string]): Struct =
-    echo stringSet
-    result = Struct(
-        kind: dtSystem,
-        manufacturer: stringSet[src.manufacturer - 1],
-        productName: stringSet[src.productName - 1],
-        serialNumber: stringSet[src.serialNumber - 1],
-        sysVersion: stringSet[src.version - 1],
+proc newSystemInfo(src: SMBSystemInformation, version: int, stringSet: seq[string]): Struct =
+    var si = SystemInfo(
+        header: Header(kind: dtSystem, length: src.header.length, handle: src.header.handle),
+        manufacturer: stringSet[src.manufacturer - 1].strip(),
+        productName: stringSet[src.productName - 1].strip(),
+        serialNumber: stringSet[src.serialNumber - 1].strip(),
+        sysVersion: stringSet[src.version - 1].strip(),
         uuid: initGuid(data = src.uuid),
         wakeUpReason: swtReserved,
         skuNumber: "",
         family:""
     )
     if version >= 210:
-        result.wakeUpReason = src.wakeUpReason.SysWakeUpType
+        si.wakeUpReason = src.wakeUpReason.SysWakeUpType
     if version >= 240:
-        result.skuNumber = stringSet[src.skuNumber - 1]
-        result.family = stringSet[src.family - 1]
+        si.skuNumber = stringSet[src.skuNumber - 1].strip()
+        si.family = stringSet[src.family - 1].strip()
+    result = si
+
+proc newBoardInfo(src: SMBBaseBoard, version: int, stringSet: seq[string]): Struct =
+    result = BaseBoard(
+        header: Header(kind: dtSystem, length: src.header.length, handle: src.header.handle),
+        manufacturer: stringSet[src.manufacturer - 1].strip(),
+        product: stringSet[src.product - 1].strip(),
+        version: stringSet[src.version - 1].strip(),
+        serialNumber: stringSet[src.serialNumber - 1].strip(),
+        assetTagNumber: stringSet[src.assetTagNumber - 1].strip(),
+        features: decodeBoardFeatures(src.featureFlags),
+        locationInChassis: stringSet[src.locationInChassis - 1].strip(),
+        chassisHandle: src.chassisHandle,
+        boardType: src.boardType.BoardType,
+        numberOfContainedHandles: src.numberOfContainedHandles,
+        containedObjectHandles: decodeBoardHandles(
+                                    cast[ptr UncheckedArray[uint16]](src.unsafeAddr),
+                                    src.numberOfContainedHandles),
+    )
 
 
 proc decode*(kind: uint8, data: seq[char], stringsSet: seq[string],
@@ -149,6 +187,10 @@ proc decode*(kind: uint8, data: seq[char], stringsSet: seq[string],
         var src: SMBSystemInformation
         src.fromBin(data)
         result = newSystemInfo(src, ver, stringsSet)
+    of dtBaseBoard.uint8:
+        var src: SMBBaseBoard
+        src.fromBin(data)
+        result = newBoardInfo(src, ver, stringsSet)
     of dtCoolingDevice.uint8:
         var src: SMBCoolingDevice
         src.fromBin(data)

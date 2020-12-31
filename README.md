@@ -15,8 +15,8 @@ Awesome SBIOS parser library in pure Nim.
 ## TODO
 
 - [x] BIOS Structure (Type 0)
-- [X] System Information Structure (Type 1)
-- [ ] Baseboard (Type 2)
+- [x] System Information Structure (Type 1)
+- [x] Baseboard (Type 2)
 - [ ] System Enclosure or Chassis (Type 3)
 - [ ] Processor Information (Type 4)
 - [ ] Memory Controller Information (Type 5, Obsolete)
