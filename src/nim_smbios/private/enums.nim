@@ -4,7 +4,7 @@ smbEnum DataType:
     dtBios                                  $= "Type 0: BIOS Information"                      #
     dtSystem                                $= "Type 1: System Information"
     dtBaseBoard                             $= "Type 2: Base Board Information"
-    dtChasis
+    dtChasis                                $= "Type 3: System Enclosure or Chassis"
     dtProcessor
     dtMemoryController # obsolete
     dtMemoryModule # obsolete
@@ -158,3 +158,60 @@ smbEnum BoardType:
     btCpuMemMod                   $= "Processor/Memory Module"
     btCpuIoMod                    $= "Processor/IO Module"
     btInterconMod                 $= "Interconnect board"
+
+smbEnum ChassisType:
+   ctEmpty                        $= "Unset"
+   ctOther                        $= "Other"
+   ctUnknown                      $= "Unknown"
+   ctDesktop                      $= "Desktop"
+   ctLowProfDesk                  $= "Low Profile Desktop"
+   ctPizzaBox                     $= "Pizza Box"
+   ctMinTower                     $= "Mini Tower"
+   ctTower                        $= "Tower"
+   ctPortable                     $= "Portable"
+   ctLaptop                       $= "Laptop"
+   ctNotebook                     $= "Notebook"
+   ctHandHeld                     $= "Hand Held"
+   ctDockingStation               $= "Docking Station"
+   ctAllInOne                     $= "All in One"
+   ctSubNotebook                  $= "Sub Notebook"
+   ctSpaceSaving                  $= "Space-saving"
+   ctLunchBox                     $= "Lunch Box"
+   ctMainServerChassis            $= "Main Server Chassis"
+   ctExpansionChassis             $= "Expansion Chassis"
+   ctSubChassis                   $= "SubChassis"
+   ctBusExpChassis                $= "Bus Expansion Chassis"
+   ctPeripheralChassis            $= "Peripheral Chassis"
+   ctRaidChassis                  $= "RAID Chassis"
+   ctRackMountCh                  $= "Rack Mount Chassis"
+   ctSealedCasePc                 $= "Sealed-case PC"
+   ctMultiSysChassis              $= "19h Multi-system chassis"
+   ctCompactPCI                   $= "1Ah Compact PCI"
+   ctAdvancedTca                  $= "1Bh Advanced TCA"
+   ctBlade                        $= "Blade"
+   ctBladeEnclosure               $= "Blade Enclosure"
+   ctTablet                       $= "Tablet"
+   ctConvertible                  $= "Convertible"
+   ctDetachable                   $= "Detachable"
+   ctIotGateway                   $= "IoT Gateway"
+   ctEmbedded                     $= "Embedded PC"
+   ctMiniPc                       $= "Mini PC"
+   ctStickPC                      $= "Stick PC"
+
+smbEnum ChassisState:
+    csEmpty                       $= "Unset"
+    csOther                       $= "Other"
+    csUnknown                     $= "Unknown"
+    csSafe                        $= "Safe"
+    csWarning                     $= "Warning"
+    csCritical                    $= "Critical"
+    csNonRecover                  $= "Non-recoverable"
+
+smbEnum ChassisSecStatus:
+    cssEmpty                      $= "Unset"
+    cssOther                      $= "Other"
+    cssUnknown                    $= "Unknown"
+    cssNone                       $= "None"
+    cssExtIfLockedOut             $= "External interface locked out"
+    cssExtIfEnabled               $= "External interface enabled"
+

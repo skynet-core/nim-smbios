@@ -21,3 +21,7 @@ test "test parser":
   assert opt.isSome()
   let board = cast[BaseBoard](opt.unsafeGet[0])
   assert board.product == "Ghibli_CFS"
+  opt = tableParser.structs(dtChasis.uint8)
+  assert opt.isSome()
+  let chassis = cast[Chassis](opt.unsafeGet[0])
+  assert chassis.kind == ctNotebook

@@ -103,25 +103,30 @@ type
                                                                     # Processor, Port, System Slots, Memory Device) that are
                                                                     # contained by this baseboard
 
-    SMBChasis* {. packed .} = object
-        header: SMBStructHeader                 # 2.0 + #
-        manufacturer: uint8                     #       # string
-        kind: uint8                             #       # varies
-        version: uint8                          #       # string
-        serialNumber: uint8                     #       # string
-        assetTagNumber: uint8                   #       # string
-        bootUpState: uint8                      # 2.1 + # enum
-        powerSupplyState: uint8                 #       # enum
-        thermalState: uint8                     #       # enum
-        securityStatus: uint                    #       # enum
-        oemDefined: uint32                      # 2.3 + # varies
-        height: uint8                           #       # varies
-        numberOfPowerCords: uint8               #       # varies
-        containedElementCount: uint8            #       # varies
-        containedElementRecordLength: uint8     #       # varies
-        # containedElemets: seq[uint8]          #       # varies                 
-        # skuNumber: uint8                      # 2.7 + # string
-
+    SMBChassis* {. packed .}                    = object
+        header*: SMBStructHeader                 # 2.0 + #
+        manufacturer*: uint8                     #       # string
+        kind*: uint8                             #       # varies
+        version*: uint8                          #       # string
+        serialNumber*: uint8                     #       # string
+        assetTagNumber*: uint8                   #       # string
+        bootUpState*: uint8                      # 2.1 + # enum
+        powerSupplyState*: uint8                 #       # enum
+        thermalState*: uint8                     #       # enum
+        securityStatus*: uint8                   #       # enum
+        oemDefined*: uint32                      # 2.3 + # varies
+        height*: uint8                           #       # varies
+        numberOfPowerCords*: uint8               #       # varies
+        containedElementCount*: uint8            #       # varies
+        containedElementRecordLength*: uint8     #       # varies
+        containedElemets*: ptr UncheckedArray[SMBChassisElement]          #       # varies                 
+        skuNumber*: uint8                      # 2.7 + # string
+    
+    SMBChassisElement* {. packed .} = object
+        kind*: uint8                            # 2.3 + #
+        elMin*: uint8
+        elMax*: uint8
+    
     SMBProcessorInformation* {. packed .} = object
         header: SMBStructHeader                 #       #
         socket: uint8                           # 2.0 + #

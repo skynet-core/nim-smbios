@@ -1,6 +1,9 @@
 import enums, packed, binary, times, guid, strutils
 
 type 
+    ChassisElemKind*                    = enum
+        cekBoard,
+        cekStruct
     Version*                        = ref object
         maj*:                       uint8
         min*:                       uint8
@@ -41,7 +44,32 @@ type
         chassisHandle*:             uint16
         boardType*:                 BoardType
         numberOfContainedHandles*:  uint8
-        containedObjectHandles*:    seq[uint16]  
+        containedObjectHandles*:    seq[uint16]
+    ChassisElement*                 = object
+        case kind:ChassisElemKind
+        of cekStruct:
+            structKind*:            DataType
+        of cekBoard:
+            boardType*:             BoardType
+        elMin*: uint8
+        elMax*: uint8
+
+    Chassis*                            = ref object of Struct
+        manufacturer*:                  string
+        lockPresent*:                   bool
+        kind*:                          ChassisType
+        version*:                       string
+        serialNumber*:                  string
+        assetTagNumber*:                string
+        bootUpState*:                   ChassisState                      # 2.1 + # enum
+        powerSupplyState*:              ChassisState                 #       # enum
+        thermalState*:                  ChassisState                     #       # enum
+        securityStatus*:                ChassisSecStatus                    #       # enum
+        oemDefined*:                    uint32                      # 2.3 + # varies
+        heightInch*:                    uint8                           #       # varies
+        numberOfPowerCords*:            uint8               #       # varies     #       # varies
+        containedElemets*:              seq[ChassisElement]          #       # varies                 
+        skuNumber*:                     string                      # 2.7 + # string
     CoolingDevice*                  = ref object of Struct
         tempProbHandle*:            uint16
         devType*:                   CoolingDeviceType
@@ -89,6 +117,25 @@ proc decodeBoardFeatures(bit: byte): set[BoardFeature] =
 proc decodeBoardHandles(raw: ptr UncheckedArray[uint16], num: uint8): seq[uint16] =
     for i in 0..<num.int:
         result.add(raw[i])
+
+
+proc decodeChassisElements(arr: ptr UncheckedArray[SMBChassisElement], num: uint8, len: uint8): seq[ChassisElement] =
+    if num * len > 0:
+        var 
+            tmp: SMBChassisElement
+            ins: ChassisElement
+            list = newSeq[ChassisElement](num.int)
+        for i in 0..<num.int:
+            tmp = arr[i]
+            ins = ChassisElement()
+            case (tmp.kind shr 7):
+            of cekBoard.uint8:
+                ins.boardType = (tmp.kind and 0x7f).BoardType
+            of cekStruct.uint8:
+                ins.structKind = (tmp.kind and 0x7f).DataType
+            else: discard
+            ins.elMax = tmp.elMax
+            ins.elMin = tmp.elMin
 
 proc shiftTo[T](src: ptr T, offset: uint): ptr T =
     result = cast[ptr T](cast[uint](src) + offset)
@@ -170,7 +217,33 @@ proc newBoardInfo(src: SMBBaseBoard, version: int, stringSet: seq[string]): Stru
                                     src.numberOfContainedHandles),
     )
 
-
+proc newChassisInfo(src: SMBChassis, version: int, stringSet: seq[string]): Struct =
+    var res = Chassis()
+    defer:
+        result = res
+    if version >= 200:
+        res.header = Header(kind: dtSystem, length: src.header.length, handle: src.header.handle)
+        res.manufacturer = stringSet[src.manufacturer - 1].strip()
+        res.lockPresent = (src.kind shr 7) == 1
+        res.kind = (src.kind and 0x7f).ChassisType
+        res.version = stringSet[src.version - 1].strip()
+        res.serialNumber = stringSet[src.serialNumber - 1].strip()
+        res.assetTagNumber = stringSet[src.assetTagNumber - 1].strip()
+    if version >= 210:
+        res.bootUpState = src.bootUpState.ChassisState
+        res.powerSupplyState = src.powerSupplyState.ChassisState
+        res.thermalState = src.thermalState.ChassisState
+        res.securityStatus = src.securityStatus.ChassisSecStatus
+    if version >= 230:
+        res.oemDefined  = src.oemDefined
+        res.heightInch      = src.height
+        res.numberOfPowerCords = src.numberOfPowerCords
+        res.containedElemets = decodeChassisElements(src.containedElemets,
+             src.containedElementCount, src.containedElementRecordLength)
+    if version >= 270:
+        if src.skuNumber - 1 != 0xff:
+            res.skuNumber = stringSet[src.skuNumber - 1].strip()
+        else: res.skuNumber = "BAD INDEX"
 proc decode*(kind: uint8, data: seq[char], stringsSet: seq[string],
     version: array[3,int]): Struct {. raises: [TimeParseError].} =
     # decodes raw binary data chunk into Struct based on kind
@@ -191,6 +264,10 @@ proc decode*(kind: uint8, data: seq[char], stringsSet: seq[string],
         var src: SMBBaseBoard
         src.fromBin(data)
         result = newBoardInfo(src, ver, stringsSet)
+    of dtChasis.uint8:
+        var src: SMBChassis
+        src.fromBin(data)
+        result = newChassisInfo(src, ver, stringsSet)
     of dtCoolingDevice.uint8:
         var src: SMBCoolingDevice
         src.fromBin(data)
