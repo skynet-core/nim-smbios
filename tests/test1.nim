@@ -25,3 +25,8 @@ test "test parser":
   assert opt.isSome()
   let chassis = cast[Chassis](opt.unsafeGet[0])
   assert chassis.kind == ctNotebook
+  opt = tableParser.structs(dtProcessor.uint8)
+  assert opt.isSome()
+  let cpu = cast[Processor](opt.unsafeGet[0])
+  assert cpu.upgrade == puSocBGA1440
+

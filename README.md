@@ -18,7 +18,7 @@ Awesome SBIOS parser library in pure Nim.
 - [x] System Information Structure (Type 1)
 - [x] Baseboard (Type 2)
 - [x] System Enclosure or Chassis (Type 3)
-- [ ] Processor Information (Type 4)
+- [x] Processor Information (Type 4)
 - [ ] Memory Controller Information (Type 5, Obsolete)
 - [ ] Memory Module Information (Type 6, Obsolete)
 - [ ] Cache Information (Type 7)

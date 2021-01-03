@@ -128,33 +128,33 @@ type
         elMax*: uint8
     
     SMBProcessorInformation* {. packed .} = object
-        header: SMBStructHeader                 #       #
-        socket: uint8                           # 2.0 + #
-        kind: uint8                             #       #
-        family: uint8                           #       #
-        manufacturer: uint8                     #       #
-        cpuID: uint64                           #       #   # based on CPUID
-        version: uint8                          #       #
-        voltage: uint8                          #       #   # bit7 cleared indicate legacy mode
-        externalClock: uint8                    #       #   # external clock in MHz
-        maximumSpeed: uint16                    #       #   # max internal clock in MHz
-        currentSpeed: uint16                    #       #   # current internal clock in MHz
-        status: uint8                           #       #
-        upgrade: uint8                          #       #   # processor upgrade enum
-        l1CacheHandle: uint16                   # 2.1 + #
-        l2CacheHandle: uint16                   #       #
-        l3CacheHandle: uint16                   #       #
-        serialNumber: uint8                     # 2.3 + #
-        assetTag: uint8                         #       #
-        partNumber: uint8                       #       #
-        coreCount: uint8                        # 2.5 + #
-        coreEnabled: uint8                      #       #
-        threadCount: uint8                      #       #
-        characteristics: uint16                 #       #
-        family2: uint16                         # 2.6 + #        
-        coreCount2: uint16                      # 3.0 + #
-        coreEnabled2: uint16                    #       #
-        threadCount2: uint16                    #       #
+        header*: SMBStructHeader                 #       #
+        socket*: uint8                           # 2.0 + #
+        kind*: uint8                             #       #
+        family*: uint8                           #       #
+        manufacturer*: uint8                     #       #
+        cpuID*: uint64                           #       #   # based on CPUID
+        version*: uint8                          #       #
+        voltage*: uint8                          #       #   # bit7 cleared indicate legacy mode
+        externalClock*: uint16                   #       #   # external clock in MHz
+        maximumSpeed*: uint16                    #       #   # max internal clock in MHz
+        currentSpeed*: uint16                    #       #   # current internal clock in MHz
+        status*: uint8                           #       #
+        upgrade*: uint8                          #       #   # processor upgrade enum
+        l1CacheHandle*: uint16                   # 2.1 + #
+        l2CacheHandle*: uint16                   #       #
+        l3CacheHandle*: uint16                   #       #
+        serialNumber*: uint8                     # 2.3 + #
+        assetTag*: uint8                         #       #
+        partNumber*: uint8                       #       #
+        coreCount*: uint8                        # 2.5 + #
+        coreEnabled*: uint8                      #       #
+        threadCount*: uint8                      #       #
+        characteristics*: uint16                 #       #
+        family2*: uint16                         # 2.6 + #        
+        coreCount2*: uint16                      # 3.0 + #
+        coreEnabled2*: uint16                    #       #
+        threadCount2*: uint16                    #       #
 
     SMBCacheInformation* {. packed .} = object
         header: SMBStructHeader                 #       #
